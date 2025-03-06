@@ -1,0 +1,2 @@
+start:
+    add eax, [ecx]
