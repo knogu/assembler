@@ -80,8 +80,8 @@ ByteCode* parse_inst() {
                 }
                 case ADD: {
                     int reg = consume_reg32();
-                    expect(",");
                     if (reg != -1) {
+                        expect(",");
                         int reg2 = consume_reg32();
                         if (reg2 != -1) { // add r32, r32 (kind of 01 /r)
                             cur_bytecode = new_bytecode(cur_bytecode, (uint8_t) 1);
@@ -106,7 +106,36 @@ ByteCode* parse_inst() {
                             cur_bytecode = new_bytecode(cur_bytecode, mod_rm_val);
                         }
                     }
-
+                    break;
+                }
+                case MOV: {
+                    int reg = consume_reg32();
+                    if (reg != -1) {
+                        expect(",");
+                        int reg2 = consume_reg32();
+                        if (reg2 != -1) { // mov r32, r32 (kind of 89 /r)
+                            cur_bytecode = new_bytecode(cur_bytecode, (uint8_t) 0x89);
+                            enum Mod mod = 0b11;
+                            enum RmReg rm = reg;
+                            uint8_t mod_rm_val = mod << 6 | reg2 << 3 | rm;
+                            cur_bytecode = new_bytecode(cur_bytecode, mod_rm_val);
+                        }
+                        if (consume("[")) { // add r32, [r32] = kind of 01 /r
+                            int rm_reg = expect_reg32();
+                            expect("]");
+                            cur_bytecode = new_bytecode(cur_bytecode, (uint8_t) 0x8b);
+                            enum Mod mod = 0b00;
+                            uint8_t mod_rm_val = mod << 6 | reg << 3 | rm_reg;
+                            cur_bytecode = new_bytecode(cur_bytecode, mod_rm_val);
+                        }
+                        int* imm = consume_num();
+                        if (imm != NULL) { // interpret as 05 id = add imm32, r32
+                            cur_bytecode = new_bytecode(cur_bytecode, (uint8_t) 0xb8 + reg);
+                            for (int i = 0; i<4; i++) {
+                                cur_bytecode = new_bytecode(cur_bytecode, *imm >> (8 * i));
+                            }
+                        }
+                    }
                     break;
                 }
             }
