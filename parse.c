@@ -23,6 +23,33 @@ int64_t get_label_addr(char* label_name) {
     exit(9);
 }
 
+ByteCode* encode_common_2nd_reg(enum Reg32 reg_1st, ByteCode* cur_bytecode, uint8_t opcode_reg, uint8_t opcode_idx, uint8_t opcode_imm) {
+    int reg2 = consume_reg32();
+    if (reg2 != -1) { // add r32, r32 (kind of 01 /r)
+        cur_bytecode = new_bytecode(cur_bytecode, opcode_reg);
+        enum Mod mod = 0b11;
+        enum RmReg rm = reg_1st;
+        uint8_t mod_rm_val = mod << 6 | reg2 << 3 | rm;
+        return new_bytecode(cur_bytecode, mod_rm_val);
+    }
+    if (consume("[")) { // add r32, [r32] = kind of 01 /r
+        int rm_reg = expect_reg32();
+        expect("]");
+        cur_bytecode = new_bytecode(cur_bytecode, opcode_idx);
+        enum Mod mod = 0b00;
+        uint8_t mod_rm_val = mod << 6 | reg_1st << 3 | rm_reg;
+        return new_bytecode(cur_bytecode, mod_rm_val);
+    }
+    int* imm = consume_num();
+    if (imm != NULL) { // interpret as 05 id = add imm32, r32
+        cur_bytecode = new_bytecode(cur_bytecode, opcode_imm);
+        for (int i = 0; i<4; i++) {
+            cur_bytecode = new_bytecode(cur_bytecode, *imm >> (8 * i));
+        }
+        return cur_bytecode;
+    }
+    return NULL;
+}
 
 ByteCode* parse_inst() {
     ByteCode bytecode_head;
@@ -50,23 +77,6 @@ ByteCode* parse_inst() {
         enum OpKind opKind = consume_opcode();
         if (opKind != -1) {
             switch (opKind) {
-//        case MOV: {
-//            enum Reg32 dstReg;
-//            dstReg = expect_reg32();
-//            expect(",");
-//            if (token->kind == TK_NUM) {
-//                mov->imm = token->val;
-//                token = token->next;
-//                Insts *insts = calloc(1, sizeof(Insts));
-//                Inst *cur_inst = calloc(1, sizeof(Inst));
-//                cur_inst->mov = mov;
-//                cur_inst->kind = OP_MOV;
-//                insts->cur = cur_inst;
-//                return insts;
-//            }
-//            mov->src = expect_reg32();
-//            break;
-//        }
                 case JMP_SHORT: {
                     char* dest_label = consume_ident();
                     if (dest_label == NULL) {
@@ -82,28 +92,11 @@ ByteCode* parse_inst() {
                     int reg = consume_reg32();
                     if (reg != -1) {
                         expect(",");
-                        int reg2 = consume_reg32();
-                        if (reg2 != -1) { // add r32, r32 (kind of 01 /r)
-                            cur_bytecode = new_bytecode(cur_bytecode, (uint8_t) 1);
-                            enum Mod mod = 0b11;
-                            enum RmReg rm = reg;
-                            uint8_t mod_rm_val = mod << 6 | reg2 << 3 | rm;
-                            cur_bytecode = new_bytecode(cur_bytecode, mod_rm_val);
-                        }
-                        int* imm = consume_num();
-                        if (imm != NULL) { // interpret as 05 id = add imm32, r32
-                            cur_bytecode = new_bytecode(cur_bytecode, (uint8_t) 5);
-                            for (int i = 0; i<4; i++) {
-                                cur_bytecode = new_bytecode(cur_bytecode, *imm >> (8 * i));
-                            }
-                        }
-                        if (consume("[")) { // add r32, [r32] = kind of 01 /r
-                            int rm_reg = expect_reg32();
-                            expect("]");
-                            cur_bytecode = new_bytecode(cur_bytecode, (uint8_t) 3);
-                            enum Mod mod = 0b00;
-                            uint8_t mod_rm_val = mod << 6 | reg << 3 | rm_reg;
-                            cur_bytecode = new_bytecode(cur_bytecode, mod_rm_val);
+                        ByteCode *encoded_2nd = encode_common_2nd_reg(reg, cur_bytecode, 1, 3, 5);
+                        if (encoded_2nd) {
+                            cur_bytecode = encoded_2nd;
+                        } else {
+                            exit(11);
                         }
                     }
                     break;
@@ -112,28 +105,11 @@ ByteCode* parse_inst() {
                     int reg = consume_reg32();
                     if (reg != -1) {
                         expect(",");
-                        int reg2 = consume_reg32();
-                        if (reg2 != -1) { // mov r32, r32 (kind of 89 /r)
-                            cur_bytecode = new_bytecode(cur_bytecode, (uint8_t) 0x89);
-                            enum Mod mod = 0b11;
-                            enum RmReg rm = reg;
-                            uint8_t mod_rm_val = mod << 6 | reg2 << 3 | rm;
-                            cur_bytecode = new_bytecode(cur_bytecode, mod_rm_val);
-                        }
-                        if (consume("[")) { // add r32, [r32] = kind of 01 /r
-                            int rm_reg = expect_reg32();
-                            expect("]");
-                            cur_bytecode = new_bytecode(cur_bytecode, (uint8_t) 0x8b);
-                            enum Mod mod = 0b00;
-                            uint8_t mod_rm_val = mod << 6 | reg << 3 | rm_reg;
-                            cur_bytecode = new_bytecode(cur_bytecode, mod_rm_val);
-                        }
-                        int* imm = consume_num();
-                        if (imm != NULL) { // interpret as 05 id = add imm32, r32
-                            cur_bytecode = new_bytecode(cur_bytecode, (uint8_t) 0xb8 + reg);
-                            for (int i = 0; i<4; i++) {
-                                cur_bytecode = new_bytecode(cur_bytecode, *imm >> (8 * i));
-                            }
+                        ByteCode *encoded_2nd = encode_common_2nd_reg(reg, cur_bytecode, 0x89, 0x8b, 0xb8 + reg);
+                        if (encoded_2nd) {
+                            cur_bytecode = encoded_2nd;
+                        } else {
+                            exit(12);
                         }
                     }
                     break;
