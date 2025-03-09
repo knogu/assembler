@@ -30,8 +30,8 @@ enum Reg32 { EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI, REGISTERS_COUNT };
 static char* reg32_names[] = {
         "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"};
 
-enum OpKind {MOV, JMP_SHORT, ADD};
-static char* op_names[] = {"mov", "jmp short", "add"};
+enum OpKind {MOV, JMP_SHORT, ADD, SUB};
+static char* op_names[] = {"mov", "jmp short", "add", "sub"};
 
 enum Mod { IDX, IDX_DISP8, IDX_DISP32, REG };
 enum RmReg { RM_EAX, RM_ECX, RM_EDX, RM_EBX, SIB_OR_ESP, DIS_OR_EBP, RM_ESI, RM_EDI };

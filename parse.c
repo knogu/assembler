@@ -114,6 +114,19 @@ ByteCode* parse_inst() {
                     }
                     break;
                 }
+                case SUB: {
+                    int reg = consume_reg32();
+                    if (reg != -1) {
+                        expect(",");
+                        ByteCode *encoded_2nd = encode_common_2nd_reg(reg, cur_bytecode, 0x29, 0x2b, 0x2d);
+                        if (encoded_2nd) {
+                            cur_bytecode = encoded_2nd;
+                        } else {
+                            exit(13);
+                        }
+                    }
+                    break;
+                }
             }
         }
 
