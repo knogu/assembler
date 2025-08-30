@@ -131,6 +131,13 @@ ByteCode* parse_inst() {
                     int reg = consume_reg32();
                     if (reg != -1) {
                         cur_bytecode = new_bytecode(cur_bytecode, 0x50 + reg);
+                        break;
+                    }
+                    int* imm = consume_num();
+                    if (imm != NULL) {
+                        // todo: handle 16 and 32 bit imm
+                        cur_bytecode = new_bytecode(cur_bytecode, 0x6a);
+                        cur_bytecode = new_bytecode(cur_bytecode, *imm);
                     }
                 }
             }

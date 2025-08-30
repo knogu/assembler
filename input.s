@@ -3,3 +3,4 @@ start:
     sub eax, 2222222
     sub eax, [ecx]
     push eax
+    push 42
