@@ -127,6 +127,12 @@ ByteCode* parse_inst() {
                     }
                     break;
                 }
+                case PUSH: {
+                    int reg = consume_reg32();
+                    if (reg != -1) {
+                        cur_bytecode = new_bytecode(cur_bytecode, 0x50 + reg);
+                    }
+                }
             }
         }
 
