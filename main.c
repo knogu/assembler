@@ -18,36 +18,38 @@ char *read_file(char *path) {
     return buf;
 }
 
-void dump_insts(Insts* insts) {
-    while (insts != NULL) {
-        switch (insts->cur->kind) {
-            case LABEL: {
-                Label* label = insts->cur->label;
-                printf("%s:\n", label->name);
-                break;
-            }
-            case OP_MOV : {
-                Mov* mov = insts->cur->mov;
-                printf("mov %s, %u\n", reg32_names[(int)mov->dst], mov->imm);
-                break;
-            }
-            case OP_JMP_SHORT: {
-                printf("jmp short ");
-                ShortJmp* short_jmp = insts->cur->short_jmp;
-                printf("%s:\n", short_jmp->label);
-                break;
-            }
-        }
-        insts = insts->next;
-    }
-}
+//void dump_insts(Insts* insts) {
+//    while (insts != NULL) {
+//        switch (insts->cur->kind) {
+//            case LABEL: {
+//                Label* label = insts->cur->label;
+//                printf("%s:\n", label->name);
+//                break;
+//            }
+//            case OP_MOV : {
+//                Mov* mov = insts->cur->mov;
+//                printf("mov %s, %u\n", reg32_names[(int)mov->dst], mov->imm);
+//                break;
+//            }
+//            case OP_JMP_SHORT: {
+//                printf("jmp short ");
+//                ShortJmp* short_jmp = insts->cur->short_jmp;
+//                printf("%s:\n", short_jmp->label);
+//                break;
+//            }
+//        }
+//        insts = insts->next;
+//    }
+//}
 
 int main(int argc, char **argv) {
-    char* p = read_file(argv[1]);
+    char *p = read_file(argv[1]);
     token = tokenize(p);
 
-    ByteCode* bytecode = parse_inst();
-    write(bytecode);
+    ParseResult* parseResult = parse();
+    place_label(parseResult->insts);
+    ByteCode* byteCode = encode(parseResult->insts, parseResult->labels);
+    write(byteCode);
 
     return 0;
 }

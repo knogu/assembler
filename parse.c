@@ -1,65 +1,79 @@
 #include "common.h"
 
-struct ByteCode* byteCode;
-int64_t byteCodeLen = 0;
 Labels *label_head;
 
-ByteCode* new_bytecode(ByteCode* cur, uint8_t byte) {
-    ByteCode* newByte = calloc(1, sizeof(ByteCode));
-    newByte->byte = byte;
-    cur->next = newByte;
-    byteCodeLen += 1;
-    return newByte;
+Inst* create_inst(Inst* cur_inst) {
+    Inst* inst = calloc(1, sizeof(Inst));
+    cur_inst->next = inst;
+    return inst;
 }
 
-int64_t get_label_addr(char* label_name) {
-    int len = strlen(label_name);
-    for (Labels *cur = label_head->next; cur; cur = cur->next) {
-        printf("%s", cur->name);
-        if (strlen(cur->name) == len && !memcmp(cur->name, label_name, len))
-            return cur->place;
-    }
-
-    exit(9);
+Inst* new_mov_inst(enum Reg32 dst, UnionSrc* src, Inst* cur_inst) {
+    Mov* mov = calloc(1, sizeof(Mov));
+    mov->src = src;
+    mov->dst = dst;
+    cur_inst = create_inst(cur_inst);
+    cur_inst->mov = mov;
+    cur_inst->op = MOV;
+    return cur_inst;
 }
 
-ByteCode* encode_common_2nd_reg(enum Reg32 reg_1st, ByteCode* cur_bytecode, uint8_t opcode_reg, uint8_t opcode_idx, uint8_t opcode_imm) {
-    int reg2 = consume_reg32();
-    if (reg2 != -1) { // add r32, r32 (kind of 01 /r)
-        cur_bytecode = new_bytecode(cur_bytecode, opcode_reg);
-        enum Mod mod = 0b11;
-        enum RmReg rm = reg_1st;
-        uint8_t mod_rm_val = mod << 6 | reg2 << 3 | rm;
-        return new_bytecode(cur_bytecode, mod_rm_val);
+Inst* new_add_inst(enum Reg32 dst, UnionSrc* src, Inst* cur_inst) {
+    Add* add = calloc(1, sizeof(Add));
+    add->src = src;
+    add->dst = dst;
+    cur_inst = create_inst(cur_inst);
+    cur_inst->add = add;
+    cur_inst->op = ADD;
+    return cur_inst;
+}
+
+Inst* new_sub_inst(enum Reg32 dst, UnionSrc* src, Inst* cur_inst) {
+    Sub* sub = calloc(1, sizeof(Sub));
+    sub->src = src;
+    sub->dst = dst;
+    cur_inst = create_inst(cur_inst);
+    cur_inst->sub = sub;
+    cur_inst->op = SUB;
+    return cur_inst;
+}
+
+UnionSrc* parseSrc() {
+    UnionSrc* src = calloc(1, sizeof(UnionSrc));
+    int reg = consume_reg32();
+    if (reg != -1) { // add r32, r32 (kind of 01 /r)
+        src->srcOpt = REGISTER;
+        src->reg = reg;
+        return src;
     }
     if (consume("[")) { // add r32, [r32] = kind of 01 /r
-        int rm_reg = expect_reg32();
+        reg = consume_reg32();
         expect("]");
-        cur_bytecode = new_bytecode(cur_bytecode, opcode_idx);
-        enum Mod mod = 0b00;
-        uint8_t mod_rm_val = mod << 6 | reg_1st << 3 | rm_reg;
-        return new_bytecode(cur_bytecode, mod_rm_val);
+        src->srcOpt = REGISTER_LOOKUP;
+        src->reg = reg;
+        return src;
     }
     int* imm = consume_num();
     if (imm != NULL) { // interpret as 05 id = add imm32, r32
-        cur_bytecode = new_bytecode(cur_bytecode, opcode_imm);
-        for (int i = 0; i<4; i++) {
-            cur_bytecode = new_bytecode(cur_bytecode, *imm >> (8 * i));
-        }
-        return cur_bytecode;
+        src->srcOpt = IMM;
+        src->imm = *imm;
+        return src;
     }
-    return NULL;
+    exit(32);
 }
 
-ByteCode* parse_inst() {
-    ByteCode bytecode_head;
-    bytecode_head.next = NULL;
-    ByteCode *cur_bytecode = &bytecode_head;
-
-    Labels labels;
-    label_head = &labels;
+ParseResult* parse() {
+    Labels* labels = calloc(1, sizeof(Labels));
+    label_head = labels;
     label_head->next = NULL;
     Labels *cur_label = label_head;
+
+    Inst inst;
+    Inst* inst_head = &inst;
+    inst_head->next = NULL;
+    Inst* cur_inst = inst_head;
+
+    bool is_last_label = false;
 
     while (token->kind != TK_EOF) {
         char* ident = consume_ident();
@@ -68,106 +82,99 @@ ByteCode* parse_inst() {
 
             Labels* new_label = calloc(1, sizeof(Labels));
             new_label->name  = ident;
-            new_label->place = byteCodeLen;
             cur_label->next = new_label;
+            // place is filled after parsing
             cur_label = new_label;
-
+            is_last_label = true;
             continue;
         }
+
         enum OpKind opKind = consume_opcode();
         if (opKind != -1) {
             switch (opKind) {
+                case MOV: {
+                    int dst = consume_reg32();
+                    if (dst == -1) {
+                        exit(532);
+                    }
+                    expect(",");
+                    UnionSrc* src = parseSrc();
+                    cur_inst = new_mov_inst(dst, src, cur_inst);
+                    break;
+                }
+                case ADD: {
+                    int dst = consume_reg32();
+                    if (dst == -1) {
+                        exit(555);
+                    }
+                    expect(",");
+                    UnionSrc* src = parseSrc();
+                    cur_inst = new_add_inst(dst, src, cur_inst);
+                    break;
+                }
                 case JMP_SHORT: {
                     char* dest_label = consume_ident();
                     if (dest_label == NULL) {
                         exit(8);
                     }
-                    int64_t dst_addr = get_label_addr(dest_label);
-                    cur_bytecode = new_bytecode(cur_bytecode, 0xEB);
-                    int64_t offset = dst_addr - (byteCodeLen + 1);
-                    cur_bytecode = new_bytecode(cur_bytecode, (int8_t)offset);
-                    break;
-                }
-                case ADD: {
-                    int reg = consume_reg32();
-                    if (reg != -1) {
-                        expect(",");
-                        ByteCode *encoded_2nd = encode_common_2nd_reg(reg, cur_bytecode, 1, 3, 5);
-                        if (encoded_2nd) {
-                            cur_bytecode = encoded_2nd;
-                        } else {
-                            exit(11);
-                        }
-                    }
-                    break;
-                }
-                case MOV: {
-                    int reg = consume_reg32();
-                    if (reg != -1) {
-                        expect(",");
-                        ByteCode *encoded_2nd = encode_common_2nd_reg(reg, cur_bytecode, 0x89, 0x8b, 0xb8 + reg);
-                        if (encoded_2nd) {
-                            cur_bytecode = encoded_2nd;
-                        } else {
-                            exit(12);
-                        }
-                    }
+                    ShortJmp* shortJmp = calloc(1, sizeof(ShortJmp));
+                    shortJmp->label_name = dest_label;
+                    cur_inst = create_inst(cur_inst);
+                    cur_inst->shortJmp = shortJmp;
+                    cur_inst->op = JMP_SHORT;
                     break;
                 }
                 case SUB: {
-                    int reg = consume_reg32();
-                    if (reg != -1) {
-                        expect(",");
-                        ByteCode *encoded_2nd = encode_common_2nd_reg(reg, cur_bytecode, 0x29, 0x2b, 0x2d);
-                        if (encoded_2nd) {
-                            cur_bytecode = encoded_2nd;
-                        } else {
-                            exit(13);
-                        }
+                    int dst = consume_reg32();
+                    if (dst == -1) {
+                        exit(565);
                     }
+                    expect(",");
+                    UnionSrc* src = parseSrc();
+                    cur_inst = new_sub_inst(dst, src, cur_inst);
                     break;
                 }
                 case PUSH: {
+                    Push* push = calloc(1, sizeof(Push));
                     int reg = consume_reg32();
                     if (reg != -1) {
-                        cur_bytecode = new_bytecode(cur_bytecode, 0x50 + reg);
-                        break;
+                        push->src = reg;
                     }
                     int* imm = consume_num();
                     if (imm != NULL) {
-                        // todo: handle 16 and 32 bit imm
-                        cur_bytecode = new_bytecode(cur_bytecode, 0x6a);
-                        cur_bytecode = new_bytecode(cur_bytecode, *imm);
+                        push->imm = *imm;
+                        push->is_imm = true;
                     }
+                    cur_inst = create_inst(cur_inst);
+                    cur_inst->push = push;
+                    cur_inst->op = PUSH;
+                    break;
+                }
+                case CALL: {
+                    char* dest_label = consume_ident();
+                    if (dest_label == NULL) {
+                        exit(34);
+                    }
+                    Call* call = calloc(1, sizeof(Call));
+                    call->label_name = dest_label;
+                    cur_inst = create_inst(cur_inst);
+                    cur_inst->call = call;
+                    cur_inst->op = CALL;
+                    break;
                 }
             }
+
+            if (is_last_label) {
+                cur_inst->label = cur_label;
+            }
+            is_last_label = false;
+        } else {
+            expect_newline();
         }
-
-        expect_newline();
     }
 
-    return bytecode_head.next;
-}
-
-int write(ByteCode* cur) {
-    uint8_t bytes[byteCodeLen];
-    for (int i = 0; i < byteCodeLen; i++) {
-        bytes[i] = cur->byte;
-        cur = cur->next;
-    }
-    FILE *fp = fopen("/Users/jp31281/asm/output.bin", "wb");
-    if (fp == NULL) {
-        perror("ファイルを開けませんでした");
-        return 1;
-    }
-    size_t written = fwrite(bytes, sizeof(uint8_t), byteCodeLen, fp);
-    if (written != byteCodeLen) {
-        perror("データの書き込みに失敗しました");
-        fclose(fp);
-        return 1;
-    }
-
-    // ファイルを閉じる
-    fclose(fp);
-    return 0;
+    ParseResult* result = calloc(1, sizeof(ParseResult));
+    result->insts = inst_head->next;
+    result->labels = label_head->next;
+    return result;
 }

@@ -6,4 +6,7 @@ set(CMAKE_C_STANDARD 11)
 add_executable(asm
         main.c
         tokenize.c
-        parse.c)
+        parse.c
+        encode.c
+        place_label.c
+        common.c)
