@@ -33,10 +33,11 @@ static char* reg32_names[] = {
 enum OpKind {MOV, JMP_SHORT, ADD, SUB, PUSH, CALL, RET};
 static char* op_names[] = {"mov", "jmp short", "add", "sub", "push", "call", "ret"};
 
-extern int opCode[];
-extern int opCodeForRegSrc[];
-extern int opCodeForLookupByReg[];
-extern int opCodeForImm[];
+static int opCode[]               = {-1, 0xeb, -1, -1, 0x6a, 0xe8, 0xc3};
+static int opCodeForRegSrc[]      = {0x89, -1, 0x01, 0x29, -1, -1, -1};
+static int opCodeForLookupByReg[] = {0x8b, -1, 0x03, 0x2b, -1, -1, -1};
+static int opCodeForImm[]         = {0xb8, -1, 0x05, 0x2d, -1, -1, -1};
+
 
 enum Mod { IDX, IDX_DISP8, IDX_DISP32, REG };
 enum RmReg { RM_EAX, RM_ECX, RM_EDX, RM_EBX, SIB_OR_ESP, DIS_OR_EBP, RM_ESI, RM_EDI };

@@ -8,5 +8,4 @@ add_executable(asm
         tokenize.c
         parse.c
         encode.c
-        place_label.c
-        common.c)
+        place_label.c)
