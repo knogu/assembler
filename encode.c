@@ -23,7 +23,20 @@ Labels* get_label(char* name, Labels* labels) {
 ByteCode* encodeTwoOperands(ByteCode* cur_bytecode, enum OpKind op, enum Reg32 dst, UnionSrc* src) {
     switch (src->srcOpt) {
         case IMM: {
-            cur_bytecode = new_bytecode(cur_bytecode, opCodeForImm[op]);
+            switch (op) {
+                case MOV: {
+                    cur_bytecode = new_bytecode(cur_bytecode, opCodeForImm[op] + dst);
+                    break;
+                }
+                case SUB:
+                case ADD: {
+                    cur_bytecode = new_bytecode(cur_bytecode, opCodeForImm[op]);
+                    break;
+                }
+                default: {
+                    exit(44);
+                }
+            }
             for (int i = 0; i<4; i++) {
                 cur_bytecode = new_bytecode(cur_bytecode, src->imm >> (8 * i));
             }
