@@ -92,6 +92,9 @@ ByteCode* encode(Inst* inst, Labels* labels) {
                 }
                 cur_bytecode = cur_bytecode;
             }
+            case RET: {
+                cur_bytecode = new_bytecode(cur_bytecode, opCode[RET]);
+            }
         }
         inst = inst->next;
     }

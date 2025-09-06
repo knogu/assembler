@@ -162,6 +162,10 @@ ParseResult* parse() {
                     cur_inst->op = CALL;
                     break;
                 }
+                case RET: {
+                    cur_inst = create_inst(cur_inst);
+                    cur_inst->op = RET;
+                }
             }
 
             if (is_last_label) {

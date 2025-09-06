@@ -25,6 +25,8 @@ int inst_bytes_count(Inst *inst) {
         }
         case CALL:
             return 5;
+        case RET:
+            return 1;
     }
 }
 

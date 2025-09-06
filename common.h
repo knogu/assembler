@@ -30,8 +30,8 @@ enum Reg32 { EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI, REGISTERS_COUNT };
 static char* reg32_names[] = {
         "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"};
 
-enum OpKind {MOV, JMP_SHORT, ADD, SUB, PUSH, CALL};
-static char* op_names[] = {"mov", "jmp short", "add", "sub", "push", "call"};
+enum OpKind {MOV, JMP_SHORT, ADD, SUB, PUSH, CALL, RET};
+static char* op_names[] = {"mov", "jmp short", "add", "sub", "push", "call", "ret"};
 
 extern int opCode[];
 extern int opCodeForRegSrc[];
