@@ -20,6 +20,28 @@ Labels* get_label(char* name, Labels* labels) {
     return NULL;
 }
 
+// 0: ADD, 1: OR, 4: AND, 5: SUB, 6: XOR, 7: CMP
+ByteCode* encodeGrp1(ByteCode* cur_bytecode, enum OpKind op, enum Reg32 dst) {
+    if (dst == EAX) {
+        int operand;
+        switch (operand) {
+            case ADD: operand = 0x05; break;
+            case SUB: operand = 0x2d; break;
+            default: exit(45);
+        }
+        return new_bytecode(cur_bytecode, operand);
+    }
+    // REG in ModR/M is used for opcode
+    int reg;
+    switch (op) {
+        case ADD: reg = 0b000; break;
+        case SUB: reg = 0b101; break;
+        default: exit(455);
+    }
+    cur_bytecode = new_bytecode(cur_bytecode, 0x81);
+    return new_bytecode(cur_bytecode, 0b11 << 6 | reg << 3 | dst);
+}
+
 ByteCode* encodeTwoOperands(ByteCode* cur_bytecode, enum OpKind op, enum Reg32 dst, UnionSrc* src) {
     switch (src->srcOpt) {
         case IMM: {
@@ -28,22 +50,9 @@ ByteCode* encodeTwoOperands(ByteCode* cur_bytecode, enum OpKind op, enum Reg32 d
                     cur_bytecode = new_bytecode(cur_bytecode, opCodeForImm[op] + dst);
                     break;
                 }
-                case SUB: {
-                    if (dst == EAX) {
-                        cur_bytecode = new_bytecode(cur_bytecode, 0x2d);
-                    } else {
-                        cur_bytecode = new_bytecode(cur_bytecode, 0x81);
-                        cur_bytecode = new_bytecode(cur_bytecode, 0b11 << 6 | 0b101 << 3 | dst);
-                    }
-                    break;
-                }
+                case SUB:
                 case ADD: {
-                    if (dst == EAX) {
-                        cur_bytecode = new_bytecode(cur_bytecode, 0x05);
-                    } else {
-                        cur_bytecode = new_bytecode(cur_bytecode, 0x81);
-                        cur_bytecode = new_bytecode(cur_bytecode, 0b11 << 6 | 0b000 << 3 | dst);
-                    }
+                    encodeGrp1(cur_bytecode, op, dst);
                     break;
                 }
                 default: {
