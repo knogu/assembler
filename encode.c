@@ -20,26 +20,45 @@ Labels* get_label(char* name, Labels* labels) {
     return NULL;
 }
 
+ByteCode* rexW(ByteCode* cur_bytecode) {
+    return new_bytecode(cur_bytecode, (0b0100 << 4) | 0b1000);
+}
+
+int get_reg_offset(Reg* reg) {
+    return reg->width == w64 ? reg->reg64 : reg->reg32;
+}
+
 // 0: ADD, 1: OR, 4: AND, 5: SUB, 6: XOR, 7: CMP
-ByteCode* encodeGrp1(ByteCode* cur_bytecode, enum OpKind op, enum Reg32 dst) {
-    if (dst == EAX) {
+ByteCode* encodeGrp1(ByteCode* cur_bytecode, enum OpKind op, Reg* dst, UnionSrc* src) {
+    if (dst->width == w64) {
+        cur_bytecode = rexW(cur_bytecode);
+    }
+
+    int reg_offset = get_reg_offset(dst);
+    if (reg_offset == 0) {
         int operand;
         switch (op) {
             case ADD: operand = 0x05; break;
             case SUB: operand = 0x2d; break;
             default: exit(45);
         }
-        return new_bytecode(cur_bytecode, operand);
+        cur_bytecode = new_bytecode(cur_bytecode, operand);
+    } else {
+        // REG in ModR/M is used for opcode
+        int reg;
+        switch (op) {
+            case ADD: reg = 0b000; break;
+            case SUB: reg = 0b101; break;
+            default: exit(54);
+        }
+        cur_bytecode = new_bytecode(cur_bytecode, 0x81);
+        cur_bytecode = new_bytecode(cur_bytecode, 0b11 << 6 | reg << 3 | reg_offset);
     }
-    // REG in ModR/M is used for opcode
-    int reg;
-    switch (op) {
-        case ADD: reg = 0b000; break;
-        case SUB: reg = 0b101; break;
-        default: exit(455);
+    // add and sub doesn't support imm64. even when dst is 64 bit register, 32 bit imm is used
+    for (int i = 0; i < 4; i++) {
+        cur_bytecode = new_bytecode(cur_bytecode, src->imm >> (8 * i));
     }
-    cur_bytecode = new_bytecode(cur_bytecode, 0x81);
-    return new_bytecode(cur_bytecode, 0b11 << 6 | reg << 3 | dst);
+    return cur_bytecode;
 }
 
 ByteCode* encodeTwoOperands(ByteCode* cur_bytecode, enum OpKind op, Reg* dst, UnionSrc* src) {
@@ -49,24 +68,23 @@ ByteCode* encodeTwoOperands(ByteCode* cur_bytecode, enum OpKind op, Reg* dst, Un
                 case MOV: {
                     if (dst->width == w64) {
                         // REX
-                        cur_bytecode = new_bytecode(cur_bytecode, (0b0100 << 4) | 0b1000);
+                        cur_bytecode = rexW(cur_bytecode);
                     }
-                    int reg_offset = dst->width == w64 ? dst->reg64 : dst->reg32;
-                    cur_bytecode = new_bytecode(cur_bytecode, opCodeForImm[op] + reg_offset);
+                    cur_bytecode = new_bytecode(cur_bytecode, opCodeForImm[op] + get_reg_offset(dst));
+                    int bytes = dst->width == w64 ? 8 : 4;
+                    for (int i = 0; i < bytes; i++) {
+                        cur_bytecode = new_bytecode(cur_bytecode, src->imm >> (8 * i));
+                    }
                     break;
                 }
                 case SUB:
                 case ADD: {
-                    encodeGrp1(cur_bytecode, op, dst->reg32);
+                    cur_bytecode = encodeGrp1(cur_bytecode, op, dst, src);
                     break;
                 }
                 default: {
                     exit(44);
                 }
-            }
-            int bytes = dst->width == w64 ? 8 : 4;
-            for (int i = 0; i < bytes; i++) {
-                cur_bytecode = new_bytecode(cur_bytecode, src->imm >> (8 * i));
             }
             return cur_bytecode;
         }
