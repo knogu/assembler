@@ -8,7 +8,7 @@ Inst* create_inst(Inst* cur_inst) {
     return inst;
 }
 
-Inst* new_mov_inst(enum Reg32 dst, UnionSrc* src, Inst* cur_inst) {
+Inst* new_mov_inst(Reg* dst, UnionSrc* src, Inst* cur_inst) {
     Mov* mov = calloc(1, sizeof(Mov));
     mov->src = src;
     mov->dst = dst;
@@ -18,7 +18,7 @@ Inst* new_mov_inst(enum Reg32 dst, UnionSrc* src, Inst* cur_inst) {
     return cur_inst;
 }
 
-Inst* new_add_inst(enum Reg32 dst, UnionSrc* src, Inst* cur_inst) {
+Inst* new_add_inst(Reg* dst, UnionSrc* src, Inst* cur_inst) {
     Add* add = calloc(1, sizeof(Add));
     add->src = src;
     add->dst = dst;
@@ -28,7 +28,7 @@ Inst* new_add_inst(enum Reg32 dst, UnionSrc* src, Inst* cur_inst) {
     return cur_inst;
 }
 
-Inst* new_sub_inst(enum Reg32 dst, UnionSrc* src, Inst* cur_inst) {
+Inst* new_sub_inst(Reg* dst, UnionSrc* src, Inst* cur_inst) {
     Sub* sub = calloc(1, sizeof(Sub));
     sub->src = src;
     sub->dst = dst;
@@ -53,7 +53,7 @@ UnionSrc* parseSrc() {
         src->reg = reg;
         return src;
     }
-    int* imm = consume_num();
+    long* imm = consume_num();
     if (imm != NULL) { // interpret as 05 id = add imm32, r32
         src->srcOpt = IMM;
         src->imm = *imm;
@@ -93,8 +93,8 @@ ParseResult* parse() {
         if (opKind != -1) {
             switch (opKind) {
                 case MOV: {
-                    int dst = consume_reg32();
-                    if (dst == -1) {
+                    Reg *dst = consume_reg();
+                    if (dst == NULL) {
                         exit(532);
                     }
                     expect(",");
@@ -103,9 +103,9 @@ ParseResult* parse() {
                     break;
                 }
                 case ADD: {
-                    int dst = consume_reg32();
-                    if (dst == -1) {
-                        exit(555);
+                    Reg *dst = consume_reg();
+                    if (dst == NULL) {
+                        exit(534);
                     }
                     expect(",");
                     UnionSrc* src = parseSrc();
@@ -125,9 +125,9 @@ ParseResult* parse() {
                     break;
                 }
                 case SUB: {
-                    int dst = consume_reg32();
-                    if (dst == -1) {
-                        exit(565);
+                    Reg *dst = consume_reg();
+                    if (dst == NULL) {
+                        exit(532);
                     }
                     expect(",");
                     UnionSrc* src = parseSrc();

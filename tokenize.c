@@ -28,6 +28,10 @@ enum Reg32 check_reg32(char *p) {
     return get_match_idx(p, sizeof(reg32_names) / sizeof(reg32_names[0]),reg32_names);
 }
 
+enum Reg64 check_reg64(char *p) {
+    return get_match_idx(p, sizeof(reg64_names) / sizeof(reg64_names[0]),reg64_names);
+}
+
 enum OpKind check_op(char *p) {
     return get_match_idx(p, sizeof(op_names) / sizeof(op_names[0]), op_names);
 }
@@ -63,6 +67,19 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len, int idx) {
     return tok;
 }
 
+long strToL(char **p) {
+    long ret = 0;
+    if (!isdigit(**p)) {
+        exit(255);
+    }
+    while (isdigit(**p)) {
+        ret *= 10;
+        ret += (**p) - '0';
+        *p = *p + 1;
+    }
+    return ret;
+}
+
 Token *tokenize(char *p) {
     Token head;
     head.next = NULL;
@@ -85,7 +102,15 @@ Token *tokenize(char *p) {
         enum Reg32 reg32_idx = check_reg32(p);
         if (0 <= (int)reg32_idx) {
             int len = strlen(reg32_names[(int)reg32_idx]);
-            cur = new_token(TK_REG, cur, p, len, reg32_idx);
+            cur = new_token(TK_REG_32, cur, p, len, reg32_idx);
+            p += len;
+            continue;
+        }
+
+        enum Reg64 reg64_idx = check_reg64(p);
+        if (0 <= (int)reg64_idx) {
+            int len = strlen(reg64_names[(int)reg64_idx]);
+            cur = new_token(TK_REG_64, cur, p, len, reg64_idx);
             p += len;
             continue;
         }
@@ -119,7 +144,7 @@ Token *tokenize(char *p) {
         if (isdigit(*p)) {
             cur = new_token(TK_NUM, cur, p, 0, -1);
             char *q = p;
-            cur->val = strtol(p, &p, 10);
+            cur->val = strToL(&p);
             cur->len = p - q;
             continue;
         }
@@ -132,7 +157,7 @@ Token *tokenize(char *p) {
 }
 
 enum Reg32 expect_reg32() {
-    if (token->kind != TK_REG) {
+    if (token->kind != TK_REG_32) {
         exit(5);
     }
     enum Reg32 reg = (enum Reg32) token->enum_idx;
@@ -141,7 +166,7 @@ enum Reg32 expect_reg32() {
 }
 
 enum Reg32 consume_reg32() {
-    if (token->kind != TK_REG) {
+    if (token->kind != TK_REG_32) {
         return -1;
     }
     enum Reg32 reg = (enum Reg32) token->enum_idx;
@@ -149,11 +174,37 @@ enum Reg32 consume_reg32() {
     return reg;
 }
 
-int* consume_num() {
+enum Reg64 consume_reg64() {
+    if (token->kind != TK_REG_64) {
+        return -1;
+    }
+    enum Reg64 reg = (enum Reg64) token->enum_idx;
+    token = token->next;
+    return reg;
+}
+
+Reg *consume_reg() {
+    Reg *reg = calloc(sizeof(Reg), 1);
+    enum Reg32 reg32 = consume_reg32();
+    if (reg32 != -1) {
+        reg->width = w32;
+        reg->reg32 = reg32;
+        return reg;
+    }
+    enum Reg64 reg64 = consume_reg64();
+    if (reg64 != -1) {
+        reg->width = w64;
+        reg->reg64 = reg64;
+        return reg;
+    }
+    exit(79);
+}
+
+long* consume_num() {
     if (token->kind != TK_NUM) {
         return NULL;
     }
-    int* ret = &token->val;
+    long* ret = &token->val;
     token = token->next;
     return ret;
 }

@@ -9,7 +9,8 @@ typedef enum {
     TK_RESERVED,
     TK_IDENT,
     TK_OPECODE,
-    TK_REG,
+    TK_REG_32,
+    TK_REG_64,
     TK_NUM, // imm
     TK_NEWLINE,
     TK_EOF,
@@ -18,7 +19,7 @@ typedef enum {
 struct Token {
     TokenKind kind;
     struct Token *next;
-    int val;
+    long val;
     int enum_idx;
     char *str;
     int len;
@@ -29,6 +30,10 @@ typedef struct Token Token;
 enum Reg32 { EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI, REGISTERS_COUNT };
 static char* reg32_names[] = {
         "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"};
+
+enum Reg64 { RAX, RCX, RDX, RBX, RSP, RBP, RSI, RDI, REGISTERS_COUNT_ };
+static char* reg64_names[] = {
+        "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi"};
 
 enum OpKind {MOV, JMP_SHORT, ADD, SUB, PUSH, CALL, RET};
 static char* op_names[] = {"mov", "jmp short", "add", "sub", "push", "call", "ret"};
@@ -52,6 +57,19 @@ enum SrcOpt {
     REGISTER_LOOKUP,
 };
 
+enum Width {
+    w32,
+    w64
+};
+
+typedef struct {
+    union {
+        enum Reg32 reg32;
+        enum Reg64 reg64;
+    };
+    enum Width width;
+} Reg;
+
 typedef struct {
     union {
         long imm;
@@ -61,7 +79,7 @@ typedef struct {
 } UnionSrc;
 
 typedef struct {
-    enum Reg32 dst; // todo: handle all dst size by adding another field to show size
+    Reg* dst; // todo: handle all dst size by adding another field to show size
     enum SrcOpt src_opt;
     int dst_offset;
     int src_offset;
@@ -69,14 +87,14 @@ typedef struct {
 } Add;
 
 typedef struct {
-    enum Reg32 dst; // todo: handle all dst size by adding another field to show size
+    Reg* dst; // todo: handle all dst size by adding another field to show size
     UnionSrc* src;
     int dst_offset;
     int src_offset;
 } Sub;
 
 typedef struct {
-    enum Reg32 dst; // todo: handle all dst size
+    Reg* dst;
     UnionSrc* src;
     int dst_offset;
     int src_offset;
@@ -125,6 +143,7 @@ typedef struct {
 Token *tokenize(char *p);
 enum Reg32 expect_reg32();
 enum Reg32 consume_reg32();
+Reg* consume_reg();
 void expect(char *op);
 char *consume_ident();
 void expect_newline();
@@ -143,7 +162,7 @@ int write(ByteCode* cur);
 
 enum OpKind consume_opcode();
 
-int* consume_num();
+long* consume_num();
 
 bool consume(char *op);
 

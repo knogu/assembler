@@ -9,6 +9,9 @@ start:
     mov ecx, 2222222
     mov eax, [ecx]
     mov ecx, [eax]
+    sub eax, ecx
+    sub eax, 2222222
+    sub eax, [ecx]
     push eax
     push 42
     jmp short start

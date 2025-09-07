@@ -24,7 +24,7 @@ Labels* get_label(char* name, Labels* labels) {
 ByteCode* encodeGrp1(ByteCode* cur_bytecode, enum OpKind op, enum Reg32 dst) {
     if (dst == EAX) {
         int operand;
-        switch (operand) {
+        switch (op) {
             case ADD: operand = 0x05; break;
             case SUB: operand = 0x2d; break;
             default: exit(45);
@@ -42,24 +42,30 @@ ByteCode* encodeGrp1(ByteCode* cur_bytecode, enum OpKind op, enum Reg32 dst) {
     return new_bytecode(cur_bytecode, 0b11 << 6 | reg << 3 | dst);
 }
 
-ByteCode* encodeTwoOperands(ByteCode* cur_bytecode, enum OpKind op, enum Reg32 dst, UnionSrc* src) {
+ByteCode* encodeTwoOperands(ByteCode* cur_bytecode, enum OpKind op, Reg* dst, UnionSrc* src) {
     switch (src->srcOpt) {
         case IMM: {
             switch (op) {
                 case MOV: {
-                    cur_bytecode = new_bytecode(cur_bytecode, opCodeForImm[op] + dst);
+                    if (dst->width == w64) {
+                        // REX
+                        cur_bytecode = new_bytecode(cur_bytecode, (0b0100 << 4) | 0b1000);
+                    }
+                    int reg_offset = dst->width == w64 ? dst->reg64 : dst->reg32;
+                    cur_bytecode = new_bytecode(cur_bytecode, opCodeForImm[op] + reg_offset);
                     break;
                 }
                 case SUB:
                 case ADD: {
-                    encodeGrp1(cur_bytecode, op, dst);
+                    encodeGrp1(cur_bytecode, op, dst->reg32);
                     break;
                 }
                 default: {
                     exit(44);
                 }
             }
-            for (int i = 0; i<4; i++) {
+            int bytes = dst->width == w64 ? 8 : 4;
+            for (int i = 0; i < bytes; i++) {
                 cur_bytecode = new_bytecode(cur_bytecode, src->imm >> (8 * i));
             }
             return cur_bytecode;
@@ -67,14 +73,14 @@ ByteCode* encodeTwoOperands(ByteCode* cur_bytecode, enum OpKind op, enum Reg32 d
         case REGISTER: {
             cur_bytecode = new_bytecode(cur_bytecode, opCodeForRegSrc[op]);
             enum Mod mod = 0b11;
-            enum RmReg rm = dst;
+            enum Reg32 rm = dst->reg32;
             uint8_t mod_rm_val = mod << 6 | src->reg << 3 | rm;
             return new_bytecode(cur_bytecode, mod_rm_val);
         }
         case REGISTER_LOOKUP: {
             cur_bytecode = new_bytecode(cur_bytecode, opCodeForLookupByReg[op]);
             enum Mod mod = 0b00;
-            uint8_t mod_rm_val = mod << 6 | dst << 3 | src->reg;
+            uint8_t mod_rm_val = mod << 6 | dst->reg32 << 3 | src->reg;
             return new_bytecode(cur_bytecode, mod_rm_val);
         }
     }

@@ -1,5 +1,5 @@
 set -xue
 
 cmake --build build
-./build/asm input.s
+./build/asm input_64.s
 ./compare.sh
