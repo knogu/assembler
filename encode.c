@@ -28,9 +28,22 @@ ByteCode* encodeTwoOperands(ByteCode* cur_bytecode, enum OpKind op, enum Reg32 d
                     cur_bytecode = new_bytecode(cur_bytecode, opCodeForImm[op] + dst);
                     break;
                 }
-                case SUB:
+                case SUB: {
+                    if (dst == EAX) {
+                        cur_bytecode = new_bytecode(cur_bytecode, 0x2d);
+                    } else {
+                        cur_bytecode = new_bytecode(cur_bytecode, 0x81);
+                        cur_bytecode = new_bytecode(cur_bytecode, 0b11 << 6 | 0b101 << 3 | dst);
+                    }
+                    break;
+                }
                 case ADD: {
-                    cur_bytecode = new_bytecode(cur_bytecode, opCodeForImm[op]);
+                    if (dst == EAX) {
+                        cur_bytecode = new_bytecode(cur_bytecode, 0x05);
+                    } else {
+                        cur_bytecode = new_bytecode(cur_bytecode, 0x81);
+                        cur_bytecode = new_bytecode(cur_bytecode, 0b11 << 6 | 0b000 << 3 | dst);
+                    }
                     break;
                 }
                 default: {
