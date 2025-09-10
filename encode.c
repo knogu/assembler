@@ -150,9 +150,22 @@ ByteCode* encode(Inst* inst, Labels* labels) {
                     cur_bytecode = new_bytecode(cur_bytecode, label->place >> (8 * i));
                 }
                 cur_bytecode = cur_bytecode;
+                break;
             }
             case RET: {
                 cur_bytecode = new_bytecode(cur_bytecode, opCode[RET]);
+                break;
+            }
+            case IMUL: {
+                IMul* imul = inst->iMul;
+                if (imul->dst->width == w64) {
+                    cur_bytecode = rexW(cur_bytecode);
+                }
+                cur_bytecode = new_bytecode(cur_bytecode, 0x0f);
+                cur_bytecode = new_bytecode(cur_bytecode, 0xaf);
+                uint8_t mod_rm_val = 0b11 << 6 | imul->dst->reg64 << 3 | imul->src->reg64;
+                cur_bytecode = new_bytecode(cur_bytecode, mod_rm_val);
+                break;
             }
         }
         inst = inst->next;

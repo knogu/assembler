@@ -165,6 +165,25 @@ ParseResult* parse() {
                 case RET: {
                     cur_inst = create_inst(cur_inst);
                     cur_inst->op = RET;
+                    break;
+                }
+                case IMUL: {
+                    IMul* imul = calloc(1, sizeof(IMul));
+                    Reg *dst = consume_reg();
+                    if (dst == NULL) {
+                        exit(225);
+                    }
+                    expect(",");
+                    Reg *src = consume_reg();
+                    if (src == NULL) {
+                        exit(235);
+                    }
+                    imul->dst = dst;
+                    imul->src = src;
+                    cur_inst = create_inst(cur_inst);
+                    cur_inst->op = IMUL;
+                    cur_inst->iMul = imul;
+                    break;
                 }
             }
 

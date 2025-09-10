@@ -1,4 +1,8 @@
 start:
+    imul rcx, rdi
+    imul rdi, rcx
+    imul rax, rcx
+    imul rcx, rax
     mov eax, ecx
     mov ecx, eax
     mov eax, 2222222
