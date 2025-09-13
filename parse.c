@@ -40,14 +40,14 @@ Inst* new_sub_inst(Reg* dst, UnionSrc* src, Inst* cur_inst) {
 
 UnionSrc* parseSrc() {
     UnionSrc* src = calloc(1, sizeof(UnionSrc));
-    int reg = consume_reg32();
-    if (reg != -1) { // add r32, r32 (kind of 01 /r)
+    Reg* reg = consume_reg();
+    if (reg != NULL) { // add r32, r32 (kind of 01 /r)
         src->srcOpt = REGISTER;
         src->reg = reg;
         return src;
     }
     if (consume("[")) { // add r32, [r32] = kind of 01 /r
-        reg = consume_reg32();
+        reg = consume_reg();
         expect("]");
         src->srcOpt = REGISTER_LOOKUP;
         src->reg = reg;
@@ -209,6 +209,21 @@ ParseResult* parse() {
                 case CQO: {
                     cur_inst = create_inst(cur_inst);
                     cur_inst->op = CQO;
+                    break;
+                }
+                case CMP: {
+                    Cmp* cmp = calloc(1, sizeof(Cmp));
+                    Reg* arg1 = consume_reg();
+                    if (arg1 == NULL) {
+                        exit(225);
+                    }
+                    cmp->arg1 = arg1;
+                    expect(",");
+                    UnionSrc* arg2 = parseSrc();
+                    cmp->arg2 = arg2;
+                    cur_inst = create_inst(cur_inst);
+                    cur_inst->op = CMP;
+                    cur_inst->cmp = cmp;
                     break;
                 }
             }

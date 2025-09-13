@@ -92,13 +92,13 @@ ByteCode* encodeTwoOperands(ByteCode* cur_bytecode, enum OpKind op, Reg* dst, Un
             cur_bytecode = new_bytecode(cur_bytecode, opCodeForRegSrc[op]);
             enum Mod mod = 0b11;
             enum Reg32 rm = dst->reg32;
-            uint8_t mod_rm_val = mod << 6 | src->reg << 3 | rm;
+            uint8_t mod_rm_val = mod << 6 | src->reg->reg32 << 3 | rm;
             return new_bytecode(cur_bytecode, mod_rm_val);
         }
         case REGISTER_LOOKUP: {
             cur_bytecode = new_bytecode(cur_bytecode, opCodeForLookupByReg[op]);
             enum Mod mod = 0b00;
-            uint8_t mod_rm_val = mod << 6 | dst->reg32 << 3 | src->reg;
+            uint8_t mod_rm_val = mod << 6 | dst->reg32 << 3 | src->reg->reg32;
             return new_bytecode(cur_bytecode, mod_rm_val);
         }
     }
@@ -184,6 +184,13 @@ ByteCode* encode(Inst* inst, Labels* labels) {
                 cur_bytecode = rexW(cur_bytecode);
                 cur_bytecode = new_bytecode(cur_bytecode, opCode[CQO]);
                 break;
+            }
+            case CMP: {
+                cur_bytecode = rexW(cur_bytecode);
+                cur_bytecode = new_bytecode(cur_bytecode, 0x39);
+                Cmp *cmp = inst->cmp;
+                uint8_t mod_rm_val = 0b11 << 6 | cmp->arg2->reg->reg64 << 3 | cmp->arg1->reg64;
+                cur_bytecode = new_bytecode(cur_bytecode, mod_rm_val);
             }
         }
         inst = inst->next;

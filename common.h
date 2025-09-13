@@ -35,9 +35,9 @@ enum Reg64 { RAX, RCX, RDX, RBX, RSP, RBP, RSI, RDI, REGISTERS_COUNT_ };
 static char* reg64_names[] = {
         "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi"};
 
-enum OpKind {MOV, JMP_SHORT, ADD, SUB, PUSH, CALL, RET, IMUL, CQO, IDIV, POP};
+enum OpKind {MOV, JMP_SHORT, ADD, SUB, PUSH, CALL, RET, IMUL, CQO, IDIV, POP, CMP};
 static char* op_names[] = {"mov", "jmp short", "add", "sub", "push", "call", "ret", "imul",
-                           "cqo", "idiv", "pop"};
+                           "cqo", "idiv", "pop", "cmp"};
 
 static int opCode[]               = {-1, 0xeb, -1, -1, 0x6a, 0xe8, 0xc3, -1, 0x99};
 static int opCodeForRegSrc[]      = {0x89, -1, 0x01, 0x29, -1, -1, -1, -1, -1};
@@ -74,7 +74,7 @@ typedef struct {
 typedef struct {
     union {
         long imm;
-        enum Reg32 reg;
+        Reg* reg;
     };
     enum SrcOpt srcOpt;
 } UnionSrc;
@@ -125,6 +125,11 @@ typedef struct {
     char* label_name;
 } Call;
 
+typedef struct {
+    Reg* arg1;
+    UnionSrc* arg2;
+} Cmp;
+
 struct Labels {
     char* name;
     int64_t place;
@@ -146,6 +151,7 @@ struct Inst {
         IMul *iMul;
         IDiv *iDiv;
         Pop *pop;
+        Cmp *cmp;
     };
     struct Inst *next;
 };

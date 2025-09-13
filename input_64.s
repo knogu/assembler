@@ -1,4 +1,6 @@
 start:
+    cmp rax, rdi
+    cmp rcx, rdi
     push 42
     push rax
     push rdi
