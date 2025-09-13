@@ -1,4 +1,6 @@
 start:
+    mov rcx, [rdi]
+    mov rax, rcx
     cmp rax, rdi
     cmp rcx, rdi
     push 42
@@ -30,5 +32,4 @@ start:
     sub ecx, eax
     sub eax, 2222222
     sub rax, 1073741824
-    jmp short start
     ret

@@ -61,22 +61,37 @@ ByteCode* encodeGrp1(ByteCode* cur_bytecode, enum OpKind op, Reg* dst, UnionSrc*
     return cur_bytecode;
 }
 
+ByteCode* encodeMov(ByteCode* cur_bytecode, Mov* mov) {
+    if (mov->dst->width == w64) {
+        // REX
+        cur_bytecode = rexW(cur_bytecode);
+    }
+    switch (mov->src->srcOpt) {
+        case IMM: {
+            cur_bytecode = new_bytecode(cur_bytecode, opCodeForImm[MOV] + get_reg_offset(mov->dst));
+            int bytes = mov->dst->width == w64 ? 8 : 4;
+            for (int i = 0; i < bytes; i++) {
+                cur_bytecode = new_bytecode(cur_bytecode, mov->src->imm >> (8 * i));
+            }
+            return cur_bytecode;
+        }
+        case REGISTER: {
+            cur_bytecode = new_bytecode(cur_bytecode, opCodeForRegSrc[MOV]);
+            uint8_t mod_rm_val = 0b11 << 6 | (get_reg_offset(mov->src->reg)) << 3 | (get_reg_offset(mov->dst));
+            return new_bytecode(cur_bytecode, mod_rm_val);
+        }
+        case REGISTER_LOOKUP: {
+            cur_bytecode = new_bytecode(cur_bytecode, opCodeForLookupByReg[MOV]);
+            uint8_t mod_rm_val = 0b00 << 6 | get_reg_offset(mov->dst) << 3 | get_reg_offset(mov->src->reg);
+            return new_bytecode(cur_bytecode, mod_rm_val);
+        }
+    }
+}
+
 ByteCode* encodeTwoOperands(ByteCode* cur_bytecode, enum OpKind op, Reg* dst, UnionSrc* src) {
     switch (src->srcOpt) {
         case IMM: {
             switch (op) {
-                case MOV: {
-                    if (dst->width == w64) {
-                        // REX
-                        cur_bytecode = rexW(cur_bytecode);
-                    }
-                    cur_bytecode = new_bytecode(cur_bytecode, opCodeForImm[op] + get_reg_offset(dst));
-                    int bytes = dst->width == w64 ? 8 : 4;
-                    for (int i = 0; i < bytes; i++) {
-                        cur_bytecode = new_bytecode(cur_bytecode, src->imm >> (8 * i));
-                    }
-                    break;
-                }
                 case SUB:
                 case ADD: {
                     cur_bytecode = encodeGrp1(cur_bytecode, op, dst, src);
@@ -112,7 +127,7 @@ ByteCode* encode(Inst* inst, Labels* labels) {
         switch (inst->op) {
             case MOV: {
                 Mov *mov = inst->mov;
-                cur_bytecode = encodeTwoOperands(cur_bytecode, MOV, mov->dst, mov->src);
+                cur_bytecode = encodeMov(cur_bytecode, inst->mov);
                 break;
             }
             case ADD: {
