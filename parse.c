@@ -127,7 +127,7 @@ ParseResult* parse() {
                 case SUB: {
                     Reg *dst = consume_reg();
                     if (dst == NULL) {
-                        exit(532);
+                        exit(53);
                     }
                     expect(",");
                     UnionSrc* src = parseSrc();

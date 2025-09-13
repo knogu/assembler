@@ -1,4 +1,5 @@
 start:
+    push 42
     push rax
     push rdi
     pop rax

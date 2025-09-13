@@ -197,7 +197,7 @@ Reg *consume_reg() {
         reg->reg64 = reg64;
         return reg;
     }
-    exit(79);
+    return NULL;
 }
 
 long* consume_num() {
