@@ -138,7 +138,7 @@ ByteCode* encode(Inst* inst, Labels* labels) {
                     cur_bytecode = new_bytecode(cur_bytecode, opCode[PUSH]);
                     cur_bytecode = new_bytecode(cur_bytecode, push->imm);
                 } else {
-                    cur_bytecode = new_bytecode(cur_bytecode, 0x50 + push->src);
+                    cur_bytecode = new_bytecode(cur_bytecode, 0x50 + push->src->reg64);
                 }
                 break;
             }

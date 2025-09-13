@@ -1,4 +1,6 @@
 start:
+    push rax
+    push rdi
     pop rax
     cqo
     idiv rdi

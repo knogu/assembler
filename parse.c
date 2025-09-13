@@ -136,11 +136,11 @@ ParseResult* parse() {
                 }
                 case PUSH: {
                     Push* push = calloc(1, sizeof(Push));
-                    int reg = consume_reg32();
-                    if (reg != -1) {
+                    Reg* reg = consume_reg();
+                    if (reg != NULL) {
                         push->src = reg;
                     }
-                    int* imm = consume_num();
+                    long* imm = consume_num();
                     if (imm != NULL) {
                         push->imm = *imm;
                         push->is_imm = true;

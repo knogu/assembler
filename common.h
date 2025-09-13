@@ -112,8 +112,8 @@ typedef struct {
 
 typedef struct {
     bool is_imm;
-    int imm;
-    enum Reg32 src;
+    long imm;
+    Reg* src;
 } Push;
 
 typedef struct {
