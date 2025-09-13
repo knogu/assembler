@@ -142,6 +142,11 @@ ByteCode* encode(Inst* inst, Labels* labels) {
                 }
                 break;
             }
+            case POP: {
+                Pop *pop = inst->pop;
+                cur_bytecode = new_bytecode(cur_bytecode, 0x58 + pop->dst->reg64);
+                break;
+            }
             case CALL: {
                 Call* call = inst->call;
                 Labels* label = get_label(call->label_name, labels);

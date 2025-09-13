@@ -150,6 +150,15 @@ ParseResult* parse() {
                     cur_inst->op = PUSH;
                     break;
                 }
+                case POP: {
+                    Pop* pop = calloc(1, sizeof(Pop));
+                    Reg* reg = consume_reg();
+                    pop->dst = reg;
+                    cur_inst = create_inst(cur_inst);
+                    cur_inst->op = POP;
+                    cur_inst->pop = pop;
+                    break;
+                }
                 case CALL: {
                     char* dest_label = consume_ident();
                     if (dest_label == NULL) {

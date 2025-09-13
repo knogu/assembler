@@ -1,4 +1,5 @@
 start:
+    pop rax
     cqo
     idiv rdi
     idiv rax
