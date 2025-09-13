@@ -167,6 +167,14 @@ ByteCode* encode(Inst* inst, Labels* labels) {
                 cur_bytecode = new_bytecode(cur_bytecode, mod_rm_val);
                 break;
             }
+            case IDIV: {
+                IDiv *idiv = inst->iDiv;
+                cur_bytecode = rexW(cur_bytecode);
+                cur_bytecode = new_bytecode(cur_bytecode, 0xf7);
+                uint8_t mod_rm_val = 0b11 << 6 | 0b111 << 3 | idiv->divided->reg64;
+                cur_bytecode = new_bytecode(cur_bytecode, mod_rm_val);
+                break;
+            }
             case CQO: {
                 cur_bytecode = rexW(cur_bytecode);
                 cur_bytecode = new_bytecode(cur_bytecode, opCode[CQO]);

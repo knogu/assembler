@@ -185,6 +185,18 @@ ParseResult* parse() {
                     cur_inst->iMul = imul;
                     break;
                 }
+                case IDIV: {
+                    IDiv* idiv = calloc(1, sizeof(IDiv));
+                    Reg *divided = consume_reg();
+                    if (divided == NULL) {
+                        exit(225);
+                    }
+                    idiv->divided = divided;
+                    cur_inst = create_inst(cur_inst);
+                    cur_inst->op = IDIV;
+                    cur_inst->iDiv = idiv;
+                    break;
+                }
                 case CQO: {
                     cur_inst = create_inst(cur_inst);
                     cur_inst->op = CQO;

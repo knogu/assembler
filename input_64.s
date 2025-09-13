@@ -1,5 +1,7 @@
 start:
     cqo
+    idiv rdi
+    idiv rax
     imul rcx, rdi
     imul rdi, rcx
     imul rax, rcx
