@@ -167,6 +167,11 @@ ByteCode* encode(Inst* inst, Labels* labels) {
                 cur_bytecode = new_bytecode(cur_bytecode, mod_rm_val);
                 break;
             }
+            case CQO: {
+                cur_bytecode = rexW(cur_bytecode);
+                cur_bytecode = new_bytecode(cur_bytecode, opCode[CQO]);
+                break;
+            }
         }
         inst = inst->next;
     }

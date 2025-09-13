@@ -185,6 +185,11 @@ ParseResult* parse() {
                     cur_inst->iMul = imul;
                     break;
                 }
+                case CQO: {
+                    cur_inst = create_inst(cur_inst);
+                    cur_inst->op = CQO;
+                    break;
+                }
             }
 
             if (is_last_label) {

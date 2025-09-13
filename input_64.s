@@ -1,4 +1,5 @@
 start:
+    cqo
     imul rcx, rdi
     imul rdi, rcx
     imul rax, rcx
