@@ -35,9 +35,9 @@ enum Reg64 { RAX, RCX, RDX, RBX, RSP, RBP, RSI, RDI, REGISTERS_COUNT_ };
 static char* reg64_names[] = {
         "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi"};
 
-enum OpKind {MOV, JMP_SHORT, ADD, SUB, PUSH, CALL, RET, IMUL, CQO, IDIV, POP, CMP};
+enum OpKind {MOV, JMP_SHORT, ADD, SUB, PUSH, CALL, RET, IMUL, CQO, IDIV, POP, CMP, CONDITIONAL_JMP};
 static char* op_names[] = {"mov", "jmp short", "add", "sub", "push", "call", "ret", "imul",
-                           "cqo", "idiv", "pop", "cmp"};
+                           "cqo", "idiv", "pop", "cmp", "je"};
 
 static int opCode[]               = {-1, 0xeb, -1, -1, 0x6a, 0xe8, 0xc3, -1, 0x99};
 static int opCodeForRegSrc[]      = {0x89, -1, 0x01, 0x29, -1, -1, -1, -1, -1};
@@ -51,6 +51,10 @@ enum RmReg { RM_EAX, RM_ECX, RM_EDX, RM_EBX, SIB_OR_ESP, DIS_OR_EBP, RM_ESI, RM_
 typedef struct {
     char* label_name;
 } ShortJmp;
+
+typedef struct {
+    char* label_name;
+} ConditinalJmp;
 
 enum SrcOpt {
     IMM,
@@ -146,6 +150,7 @@ struct Inst {
         Add *add;
         Sub *sub;
         ShortJmp *shortJmp;
+        ConditinalJmp *cjmp;
         Push *push;
         Call *call;
         IMul *iMul;

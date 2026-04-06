@@ -124,6 +124,18 @@ ParseResult* parse() {
                     cur_inst->op = JMP_SHORT;
                     break;
                 }
+                case CONDITIONAL_JMP: {
+                    char* dest_label = consume_ident();
+                    if (dest_label == NULL) {
+                        exit(8);
+                    }
+                    ConditinalJmp* jmp = calloc(1, sizeof(ConditinalJmp));
+                    jmp->label_name = dest_label;
+                    cur_inst = create_inst(cur_inst);
+                    cur_inst->cjmp = jmp;
+                    cur_inst->op = CONDITIONAL_JMP;
+                    break;
+                }
                 case SUB: {
                     Reg *dst = consume_reg();
                     if (dst == NULL) {

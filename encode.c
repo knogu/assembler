@@ -126,7 +126,6 @@ ByteCode* encode(Inst* inst, Labels* labels) {
     while (inst) {
         switch (inst->op) {
             case MOV: {
-                Mov *mov = inst->mov;
                 cur_bytecode = encodeMov(cur_bytecode, inst->mov);
                 break;
             }
@@ -134,6 +133,10 @@ ByteCode* encode(Inst* inst, Labels* labels) {
                 Add *add = inst->add;
                 cur_bytecode = encodeTwoOperands(cur_bytecode, ADD, add->dst, add->src);
                 break;
+            }
+            case CONDITIONAL_JMP: {
+                ConditinalJmp *cJmp = inst->cjmp;
+                cur_bytecode = new_bytecode(cur_bytecode, 0x74);
             }
             case JMP_SHORT: {
                 ShortJmp *shortJmp = inst->shortJmp;
